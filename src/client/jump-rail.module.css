@@ -1,0 +1,72 @@
+.rail {
+  position: fixed;
+  transform: translateY(-50%);
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 4px;
+  max-height: min(60vh, 480px);
+  overflow-y: auto;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5px 8px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.dash {
+  display: block;
+  width: 10px;
+  height: 2px;
+  border-radius: 999px;
+  background: var(--dsw-alias-border-l1);
+  transition: width 0.15s ease, height 0.15s ease, background-color 0.15s ease;
+}
+
+.row:hover .dash {
+  background: var(--dsw-alias-label-secondary);
+}
+
+.rowActive .dash {
+  width: 20px;
+  height: 4px;
+  background: var(--dsw-alias-label-primary);
+}
+
+.tip {
+  position: fixed;
+  z-index: 50;
+  max-width: 280px;
+  padding: 8px 10px;
+  background: var(--dsw-alias-bg-overlay);
+  border: 1px solid var(--dsw-alias-border-l1);
+  border-radius: 8px;
+  font-size: 12px;
+  line-height: 18px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  pointer-events: none;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.tipTitle {
+  color: var(--dsw-alias-label-primary);
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.tipRow {
+  color: var(--dsw-alias-label-secondary);
+}
+
+.tipRow strong {
+  color: var(--dsw-alias-label-primary);
+  font-weight: 500;
+}

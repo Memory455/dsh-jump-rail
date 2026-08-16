@@ -1,0 +1,10 @@
+# dsh-jump-rail bundle patch: inserts its plugin row into the web profile
+# roster. The bundle is the official dsh plugin shape — install it with
+# `dsh plugin --profile <name> add <path-or-git-url>`.
+#
+# The single row mounts BOTH halves: the host side (agent announcement) and
+# the browser side (the jump rail, via the dsh.client declaration in
+# package.json).
+- insert:
+    - id: ui-jump-rail
+      name: dsh-jump-rail
