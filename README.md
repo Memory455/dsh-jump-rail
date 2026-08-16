@@ -37,9 +37,16 @@ dsh plugin --profile web add https://github.com/Memory455/dsh-jump-rail
 
 ## 发布
 
-包名 `dsh-jump-rail` 已确认可用（registry 未占用）。仓库使用与 dsh-web-ui 相同的 tag 驱动发布方式：推送 `vX.Y.Z` tag 后，GitHub Actions 会完成类型检查、测试、构建、npm 发布和 GitHub Release 创建。
+仓库使用与 dsh-web-ui 相同的 tag 驱动发布方式：推送 `vX.Y.Z` tag 后，GitHub Actions 会完成类型检查、测试、构建、npm 发布和 GitHub Release 创建。
 
-首次发布前，在 GitHub 仓库的 `Settings → Secrets and variables → Actions` 中创建 `NPM_TOKEN`；值为具有 `dsh-jump-rail` 发布权限的 npm access token。之后确保 `package.json` 的版本与 tag 一致：
+首次发布后，在 npm 包的 `Settings → Trusted Publisher` 中选择 GitHub Actions，并填写：
+
+- Organization or user：`Memory455`
+- Repository：`dsh-jump-rail`
+- Workflow filename：`release.yml`
+- Allowed actions：`npm publish`
+
+配置使用短期 OIDC 凭据，无需在 GitHub 保存长期 npm token。之后确保 `package.json` 的版本与 tag 一致：
 
 ```sh
 pnpm version patch             # 或 minor / major；首发 0.1.0 无需执行

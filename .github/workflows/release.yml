@@ -21,7 +21,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v5
@@ -29,9 +29,9 @@ jobs:
           version: 11
 
       - name: Setup Node.js
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v6
         with:
-          node-version: 22
+          node-version: 24
           cache: pnpm
           registry-url: https://registry.npmjs.org/
 
@@ -53,10 +53,19 @@ jobs:
         run: |
           node --input-type=module -e "import pkg from './package.json' with { type: 'json' }; if ('v' + pkg.version !== process.env.TAG_VERSION) { throw new Error('tag ' + process.env.TAG_VERSION + ' does not match package version ' + pkg.version) }"
 
+      - name: Check npm version
+        id: npm-version
+        run: |
+          PACKAGE_SPEC=$(node -p "const p = require('./package.json'); p.name + '@' + p.version")
+          if npm view "$PACKAGE_SPEC" version --registry=https://registry.npmjs.org/ >/dev/null 2>&1; then
+            echo "published=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "published=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Publish to npm
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: npm publish --provenance --access public
+        if: steps.npm-version.outputs.published != 'true'
+        run: npm publish --access public
 
       - name: Create GitHub Release
         env:
