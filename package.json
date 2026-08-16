@@ -2,6 +2,14 @@
   "name": "dsh-jump-rail",
   "version": "0.1.0",
   "description": "轮次跳转条：DSH Web GUI 对话记录左侧常驻短横线导航条（每轮一根），当前视口所在轮高亮，悬停显示该轮输入/输出摘要，点击跳转到该轮输入位置。",
+  "homepage": "https://github.com/Memory455/dsh-jump-rail#readme",
+  "bugs": {
+    "url": "https://github.com/Memory455/dsh-jump-rail/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Memory455/dsh-jump-rail.git"
+  },
   "type": "module",
   "main": "lib/index.js",
   "types": "lib/types/index.d.ts",
@@ -37,10 +45,22 @@
   },
   "scripts": {
     "build": "tsc -b && tsdown",
-    "prepare": "tsdown",
+    "prepare": "npm run build",
     "typecheck": "tsc -b --pretty false",
     "test": "vitest run",
     "watch": "tsdown --watch"
+  },
+  "keywords": [
+    "deepseek",
+    "dsh",
+    "plugin",
+    "web-ui",
+    "conversation",
+    "navigation"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
   },
   "license": "Apache-2.0",
   "peerDependencies": {

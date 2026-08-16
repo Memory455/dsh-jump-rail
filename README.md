@@ -29,29 +29,24 @@ dsh plugin --profile web add link:$PWD
 # 重启 dsh web 生效
 ```
 
-## 发布到 GitHub
+## 从 GitHub 安装
 
 ```sh
-git init
-git add .
-git commit -m "feat: jump rail plugin"
-git remote add origin https://github.com/<you>/dsh-jump-rail.git
-git push -u origin main
+dsh plugin --profile web add https://github.com/Memory455/dsh-jump-rail
 ```
 
-之后可 `dsh plugin --profile web add https://github.com/<you>/dsh-jump-rail` 直接按仓库安装（或 `pnpm publish` 发布到 npm 后按包名安装）。
+## 发布
 
-## 发布到 npm
+包名 `dsh-jump-rail` 已确认可用（registry 未占用）。仓库使用与 dsh-web-ui 相同的 tag 驱动发布方式：推送 `vX.Y.Z` tag 后，GitHub Actions 会完成类型检查、测试、构建、npm 发布和 GitHub Release 创建。
 
-包名 `dsh-jump-rail` 已确认可用（registry 未占用）。发布内容由 `package.json` 的 `files` 白名单决定（lib/ + src/ + cordis.patch.yml），`prepare` 会在发布前自动构建。
+首次发布前，在 GitHub 仓库的 `Settings → Secrets and variables → Actions` 中创建 `NPM_TOKEN`；值为具有 `dsh-jump-rail` 发布权限的 npm access token。之后确保 `package.json` 的版本与 tag 一致：
 
 ```sh
-npm login                      # 首次：输入 npm 账号/token
-pnpm publish                   # 发布（自动跑 prepare 构建）
-# 更新版本：pnpm version patch && pnpm publish
+pnpm version patch             # 或 minor / major；首发 0.1.0 无需执行
+git push origin main --follow-tags
 ```
 
-建议发布前在 `package.json` 补上 `repository` 字段（GitHub 地址）与 `keywords`。发布后安装：
+发布后安装：
 
 ```sh
 dsh plugin --profile web add dsh-jump-rail
