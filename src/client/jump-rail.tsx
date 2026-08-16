@@ -67,27 +67,60 @@ interface ViewportTurn {
   y: number
 }
 
+interface VerticalRect {
+  top: number
+  bottom: number
+}
+
+interface TurnRect extends VerticalRect {
+  turn: number
+}
+
 /**
- * Resolve the turn whose first input row is currently near the top of the
- * conversation scrollport, sampling the same anchored rows ChatView pages by.
+ * Pick the visible turn nearest the scrollport's top reading line. A row that
+ * crosses the line wins; inside a gap, the closest adjacent row wins. Keeping
+ * this geometry calculation pure makes the intermittent viewport cases
+ * testable without depending on elementsFromPoint.
  */
-function viewportTurn(keyToTurn: Map<string, number>): number | null {
-  const scrollport = document.querySelector('[data-conversation-scroll]')
-  if (scrollport === null || typeof document.elementsFromPoint !== 'function') return null
-  const rect = scrollport.getBoundingClientRect()
-  if (rect.height <= 0) return null
-  const x = rect.left + Math.min(rect.width / 2, 200)
-  const ys = [rect.top + 4, rect.top + Math.max(4, rect.height / 2)]
-  for (const y of ys) {
-    for (const el of document.elementsFromPoint(x, y)) {
-      if (!(el instanceof HTMLElement)) continue
-      const row = el.closest('[data-chat-anchor-key]')
-      if (!(row instanceof HTMLElement) || row.dataset.chatAnchorKey === undefined) continue
-      const turn = keyToTurn.get(row.dataset.chatAnchorKey)
-      if (turn !== undefined) return turn
+export function nearestVisibleTurn(
+  viewport: VerticalRect,
+  rows: readonly TurnRect[],
+): number | null {
+  const probe = viewport.top + 4
+  let bestTurn: number | null = null
+  let bestDistance = Number.POSITIVE_INFINITY
+  for (const row of rows) {
+    if (row.bottom <= viewport.top || row.top >= viewport.bottom) continue
+    const distance = row.top <= probe && row.bottom >= probe
+      ? 0
+      : row.top > probe
+        ? row.top - probe
+        : probe - row.bottom
+    if (distance < bestDistance) {
+      bestDistance = distance
+      bestTurn = row.turn
     }
   }
-  return null
+  return bestTurn
+}
+
+/**
+ * Resolve the turn whose anchored row is at or nearest the top of the
+ * conversation scrollport.
+ */
+function viewportTurn(scrollport: HTMLElement, keyToTurn: Map<string, number>): number | null {
+  const rect = scrollport.getBoundingClientRect()
+  if (rect.height <= 0) return null
+  const rows: TurnRect[] = []
+  for (const row of scrollport.querySelectorAll<HTMLElement>('[data-chat-anchor-key]')) {
+    const key = row.dataset.chatAnchorKey
+    if (key === undefined) continue
+    const turn = keyToTurn.get(key)
+    if (turn === undefined) continue
+    const rowRect = row.getBoundingClientRect()
+    rows.push({ turn, top: rowRect.top, bottom: rowRect.bottom })
+  }
+  return nearestVisibleTurn(rect, rows)
 }
 
 /** Jump to the first row of the turn that actually exists in the DOM, landing
@@ -147,68 +180,88 @@ export const JumpRail = memo(function JumpRail({ useSession, t }: JumpRailProps)
   // while the chat view is mounted (other views render no anchored rows).
   const [rowsPresent, setRowsPresent] = useState<boolean | null>(null)
 
-  // Re-measure the scrollport on layout changes (column resize, window
-  // resize, session switch remount) and re-anchor the fixed rail.
+  // Keep anchoring, row presence, and active-turn selection in one refresh
+  // loop. Besides scroll, row mutations and row resizing matter because
+  // streaming output, images, and virtualized remounts can move anchors
+  // without emitting a scroll event. The document observer also reconnects
+  // listeners when the conversation scrollport itself is replaced.
   useEffect(() => {
-    if (turns.length <= 1) return
-    const measure = (): void => {
-      const scrollport = document.querySelector('[data-conversation-scroll]')
-      if (scrollport === null) {
-        setAnchor(null)
-        return
-      }
-      const rect = scrollport.getBoundingClientRect()
-      setAnchor({ left: rect.left + 4, top: rect.top + rect.height / 2 })
+    if (turns.length <= 1 || keyToTurn.size === 0) {
+      setAnchor(null)
+      setRowsPresent(false)
+      setActiveTurn(null)
+      return
     }
-    measure()
-    window.addEventListener('resize', measure)
-    let observer: ResizeObserver | null = null
-    if (typeof ResizeObserver === 'function') {
-      observer = new ResizeObserver(measure)
-      const scrollport = document.querySelector('[data-conversation-scroll]')
-      if (scrollport !== null) observer.observe(scrollport)
-    }
-    return () => {
-      window.removeEventListener('resize', measure)
-      observer?.disconnect()
-    }
-  }, [turns.length])
-
-  // Track chat-row presence so the rail hides on non-chat views instead of
-  // answering clicks with nothing (event-driven via a subtree observer).
-  useEffect(() => {
-    if (turns.length <= 1) return
-    const checkRows = (): void => {
-      setRowsPresent(document.querySelector('[data-chat-anchor-key]') !== null)
-    }
-    const scrollport = document.querySelector('[data-conversation-scroll]')
-    let observer: MutationObserver | null = null
-    if (scrollport !== null && typeof MutationObserver === 'function') {
-      observer = new MutationObserver(checkRows)
-      observer.observe(scrollport, { childList: true, subtree: true })
-    }
-    checkRows()
-    return () => { observer?.disconnect() }
-  }, [turns.length])
-
-  // Follow the viewport: recompute the current turn on scroll (rAF
-  // throttled) and once on mount; identical values bail out of re-render.
-  useEffect(() => {
-    if (turns.length <= 1 || keyToTurn.size === 0) return
-    const scrollport = document.querySelector('[data-conversation-scroll]')
-    if (scrollport === null) return
+    const turnSet = new Set(turns)
+    let scrollport: HTMLElement | null = null
     let raf = 0
-    const onScroll = (): void => {
+    const observedElements = new Set<HTMLElement>()
+    const schedule = (): void => {
       if (raf !== 0) return
       raf = requestAnimationFrame(() => {
         raf = 0
-        setActiveTurn(viewportTurn(keyToTurn))
+        refresh()
       })
     }
-    scrollport.addEventListener('scroll', onScroll, { passive: true })
-    setActiveTurn(viewportTurn(keyToTurn))
+    const resizeObserver = typeof ResizeObserver === 'function'
+      ? new ResizeObserver(schedule)
+      : null
+    const syncResizeTargets = (next: HTMLElement, rows: readonly HTMLElement[]): void => {
+      if (resizeObserver === null) return
+      const desired = new Set<HTMLElement>([next, ...rows])
+      for (const element of observedElements) {
+        if (!desired.has(element)) {
+          resizeObserver.unobserve(element)
+          observedElements.delete(element)
+        }
+      }
+      for (const element of desired) {
+        if (!observedElements.has(element)) {
+          resizeObserver.observe(element)
+          observedElements.add(element)
+        }
+      }
+    }
+    const connect = (next: HTMLElement | null): void => {
+      if (next === scrollport) return
+      scrollport?.removeEventListener('scroll', schedule)
+      scrollport = next
+      scrollport?.addEventListener('scroll', schedule, { passive: true })
+    }
+    const refresh = (): void => {
+      const found = document.querySelector('[data-conversation-scroll]')
+      connect(found instanceof HTMLElement ? found : null)
+      if (scrollport === null) {
+        setAnchor(null)
+        setRowsPresent(false)
+        syncResizeTargets(document.documentElement, [])
+        return
+      }
+      const rect = scrollport.getBoundingClientRect()
+      setAnchor(rect.height > 0 ? { left: rect.left + 4, top: rect.top + rect.height / 2 } : null)
+      const rows = Array.from(scrollport.querySelectorAll<HTMLElement>('[data-chat-anchor-key]'))
+      setRowsPresent(rows.length > 0)
+      syncResizeTargets(scrollport, rows)
+      const nextTurn = viewportTurn(scrollport, keyToTurn)
+      setActiveTurn((current) => nextTurn ?? (
+        current !== null && turnSet.has(current) ? current : turns[0] ?? null
+      ))
+    }
+    const mutationObserver = typeof MutationObserver === 'function'
+      ? new MutationObserver(schedule)
+      : null
+    mutationObserver?.observe(document.documentElement, {
+      childList: true,
+      characterData: true,
+      subtree: true,
+    })
+    window.addEventListener('resize', schedule)
+    refresh()
     return () => {
-      scrollport.removeEventListener('scroll', onScroll)
+      scrollport?.removeEventListener('scroll', schedule)
+      window.removeEventListener('resize', schedule)
+      mutationObserver?.disconnect()
+      resizeObserver?.disconnect()
       if (raf !== 0) cancelAnimationFrame(raf)
     }
   }, [keyToTurn, turns.length])

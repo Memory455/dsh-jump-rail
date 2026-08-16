@@ -8,8 +8,9 @@
  * auto-injected <style data-plugin>).
  */
 import { clientBundle } from './shared/tsdown.client.ts'
+import pkg from './package.json' with { type: 'json' }
 
-export default clientBundle('dsh-jump-rail', ['src/index.ts', 'src/invariant.ts'], {
+export default clientBundle(pkg.name, ['src/index.ts', 'src/invariant.ts'], {
   lib: {
     external: [
       '@deepseek-ai/cordis',
