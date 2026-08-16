@@ -1,4 +1,4 @@
-# dsh-jump-rail · 轮次跳转条
+# @memory455/dsh-jump-rail · 轮次跳转条
 
 DSH Web GUI 插件：对话记录左侧常驻的**纵向短横线导航条**——每一轮对话一根横线，点击即可跳转到该轮输入位置。
 
@@ -24,7 +24,7 @@ dsh plugin --profile web add link:$PWD
 # 在 ~/.dsh/profiles/web/cordis.patch.yml 追加：
 #   - insert:
 #       - id: ui-jump-rail
-#         name: dsh-jump-rail
+#         name: '@memory455/dsh-jump-rail'
 
 # 重启 dsh web 生效
 ```
@@ -56,7 +56,7 @@ git push origin main --follow-tags
 发布后安装：
 
 ```sh
-dsh plugin --profile web add dsh-jump-rail
+dsh plugin --profile web add @memory455/dsh-jump-rail
 ```
 
 ## 开发

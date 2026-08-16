@@ -18,7 +18,7 @@ import z from 'schemastery'
 const SECTION_ORDER = 210
 
 /** Model-facing announcement: plugin presence, capabilities, and limits. */
-export const JUMP_RAIL_GUIDANCE = '本机已安装 dsh-jump-rail 插件（DSH Web GUI 的轮次跳转条）：对话记录左侧常驻纵向短横线导航条，每轮一根横线；当前视口所在轮横线更亮/更粗/更长，悬停显示该轮输入/输出摘要，点击任意横线跳转到该轮输入位置。限制：仅多轮（≥2 轮）会话显示；跳转目标为当前窗口内轮次；跳转为视图内定位，不改写会话日志。用户提到「轮次跳转 / 跳转条 / 横线导航」时即指本插件，请据此协作。'
+export const JUMP_RAIL_GUIDANCE = '本机已安装 @memory455/dsh-jump-rail 插件（DSH Web GUI 的轮次跳转条）：对话记录左侧常驻纵向短横线导航条，每轮一根横线；当前视口所在轮横线更亮/更粗/更长，悬停显示该轮输入/输出摘要，点击任意横线跳转到该轮输入位置。限制：仅多轮（≥2 轮）会话显示；跳转目标为当前窗口内轮次；跳转为视图内定位，不改写会话日志。用户提到「轮次跳转 / 跳转条 / 横线导航」时即指本插件，请据此协作。'
 
 /** Plugin config, validated by the same-named schemastery schema. */
 export interface Config {

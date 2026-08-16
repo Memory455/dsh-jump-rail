@@ -1,5 +1,5 @@
 {
-  "name": "dsh-jump-rail",
+  "name": "@memory455/dsh-jump-rail",
   "version": "0.1.0",
   "description": "轮次跳转条：DSH Web GUI 对话记录左侧常驻短横线导航条（每轮一根），当前视口所在轮高亮，悬停显示该轮输入/输出摘要，点击跳转到该轮输入位置。",
   "homepage": "https://github.com/Memory455/dsh-jump-rail#readme",

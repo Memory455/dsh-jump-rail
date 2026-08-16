@@ -1,4 +1,4 @@
-# dsh-jump-rail bundle patch: inserts its plugin row into the web profile
+# @memory455/dsh-jump-rail bundle patch: inserts its plugin row into the web profile
 # roster. The bundle is the official dsh plugin shape — install it with
 # `dsh plugin --profile <name> add <path-or-git-url>`.
 #
@@ -7,4 +7,4 @@
 # package.json).
 - insert:
     - id: ui-jump-rail
-      name: dsh-jump-rail
+      name: '@memory455/dsh-jump-rail'
