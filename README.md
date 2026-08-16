@@ -41,6 +41,22 @@ git push -u origin main
 
 之后可 `dsh plugin --profile web add https://github.com/<you>/dsh-jump-rail` 直接按仓库安装（或 `pnpm publish` 发布到 npm 后按包名安装）。
 
+## 发布到 npm
+
+包名 `dsh-jump-rail` 已确认可用（registry 未占用）。发布内容由 `package.json` 的 `files` 白名单决定（lib/ + src/ + cordis.patch.yml），`prepare` 会在发布前自动构建。
+
+```sh
+npm login                      # 首次：输入 npm 账号/token
+pnpm publish                   # 发布（自动跑 prepare 构建）
+# 更新版本：pnpm version patch && pnpm publish
+```
+
+建议发布前在 `package.json` 补上 `repository` 字段（GitHub 地址）与 `keywords`。发布后安装：
+
+```sh
+dsh plugin --profile web add dsh-jump-rail
+```
+
 ## 开发
 
 ```sh
